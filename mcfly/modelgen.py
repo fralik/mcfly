@@ -35,7 +35,8 @@ def generate_models(
         deepconvlstm_min_conv_filters=10, deepconvlstm_max_conv_filters=100,
         deepconvlstm_min_lstm_layers=1, deepconvlstm_max_lstm_layers=5,
         deepconvlstm_min_lstm_dims=10, deepconvlstm_max_lstm_dims=100,
-        low_lr=1, high_lr=4, low_reg=1, high_reg=4
+        low_lr=1, high_lr=4, low_reg=1, high_reg=4,
+        deepconvlstm_lstm_activation='tanh'
 ):
     """
     Generate one or multiple untrained Keras models with random hyperparameters.
@@ -94,6 +95,9 @@ def generate_models(
     high_reg : float
         maximum  of log range for regularization rate: regularization rate is
         sampled between `10**(-low_reg)` and `10**(-high_reg)`
+    deepconvlstm_lstm_activation : str, optional
+        LSTM activation function for DeepConvLSTM models. Default value is
+        'tanh'. For the list of possible values see https://keras.io/activations/.
 
     Returns
     -------
@@ -128,7 +132,9 @@ def generate_models(
                 min_lstm_dims=deepconvlstm_min_lstm_dims,
                 max_lstm_dims=deepconvlstm_max_lstm_dims,
                 low_lr=low_lr, high_lr=high_lr, low_reg=low_reg,
-                high_reg=high_reg)
+                high_reg=high_reg,
+                deepconvlstm_lstm_activation=deepconvlstm_lstm_activation
+            )
         models.append(
             (generate_model(x_shape, number_of_classes, metrics=metrics, **hyperparameters),
              hyperparameters, current_model_type))
@@ -137,7 +143,7 @@ def generate_models(
 
 def generate_DeepConvLSTM_model(
         x_shape, class_number, filters, lstm_dims, learning_rate=0.01,
-        regularization_rate=0.01, metrics=['accuracy']):
+        regularization_rate=0.01, metrics=['accuracy'], deepconvlstm_lstm_activation='tanh'):
     """
     Generate a model with convolution and LSTM layers.
     See Ordonez et al., 2016, http://dx.doi.org/10.3390/s16010115
@@ -159,6 +165,9 @@ def generate_DeepConvLSTM_model(
     metrics : list
         Metrics to calculate on the validation set.
         See https://keras.io/metrics/ for possible values.
+    deepconvlstm_lstm_activation : str, optional
+        LSTM activation function.
+        See https://keras.io/activations/ for possible values.
 
     Returns
     -------
@@ -190,7 +199,7 @@ def generate_DeepConvLSTM_model(
 
     for lstm_dim in lstm_dims:
         model.add(LSTM(units=lstm_dim, return_sequences=True,
-                       activation='tanh'))
+                       activation=deepconvlstm_lstm_activation))
 
     model.add(Dropout(0.5))  # dropout before the dense layer
     # set up final dense layer such that every timestamp is given one
@@ -326,7 +335,8 @@ def generate_DeepConvLSTM_hyperparameter_set(
         min_conv_filters=10, max_conv_filters=100,
         min_lstm_layers=1, max_lstm_layers=5,
         min_lstm_dims=10, max_lstm_dims=100,
-        low_lr=1, high_lr=4, low_reg=1, high_reg=4):
+        low_lr=1, high_lr=4, low_reg=1, high_reg=4,
+        deepconvlstm_lstm_activation='tanh'):
     """ Generate a hyperparameter set that defines a DeepConvLSTM model.
 
     Parameters
@@ -359,6 +369,8 @@ def generate_DeepConvLSTM_hyperparameter_set(
     high_reg : float
         maximum  of log range for regularization rate: regularization rate is
         sampled between `10**(-low_reg)` and `10**(-high_reg)`
+    deepconvlstm_lstm_activation : str, optional
+        LSTM activation function.
 
     Returns
     ----------
@@ -375,6 +387,7 @@ def generate_DeepConvLSTM_hyperparameter_set(
         min_lstm_layers, max_lstm_layers + 1)
     hyperparameters['lstm_dims'] = np.random.randint(
         min_lstm_dims, max_lstm_dims + 1, number_of_lstm_layers).tolist()
+    hyperparameters['lstm_activation'] = deepconvlstm_lstm_activation
     return hyperparameters
 
 
