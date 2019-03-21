@@ -21,7 +21,7 @@
  This module provides the main functionality of mcfly: searching for an
  optimal model architecture. The work flow is as follows:
  Function generate_models from modelgen.py generates and compiles models.
- Function train_models_on_samples trains those models.
+ Functions train_models_on_samples/train_models_on_generators train those models.
  Function find_best_architecture is wrapper function that combines
  these steps.
  Example function calls can be found in the tutorial notebook
@@ -36,6 +36,46 @@ import os
 from keras.callbacks import EarlyStopping
 from keras import metrics
 
+
+def train_models_on_generators(train_generator, val_generator, models,
+    nr_epochs=5, verbose=True, outputfile=None,
+    model_path=None, early_stopping=False, metric='accuracy',
+    use_multiprocessing=False, workers=1, shuffle=True):
+
+    metric_name = get_metric_name(metric)
+
+    histories = []
+    val_metrics = []
+    val_losses = []
+    for i, (model, params, model_types) in enumerate(models):
+        if verbose:
+            print('Training model %d' % i, model_types)
+        model_metrics = [get_metric_name(name) for name in model.metrics]
+        if metric_name not in model_metrics:
+            raise ValueError(
+                'Invalid metric. The model was not compiled with {} as metric'.format(metric_name))
+        if early_stopping:
+            callbacks = [
+                EarlyStopping(monitor='val_loss', patience=0, verbose=verbose, mode='auto')]
+        else:
+            callbacks = []
+        history = model.fit_generator(generator=train_generator, validation_data=val_generator,
+                            epochs=nr_epochs,
+                            use_multiprocessing=use_multiprocessing,
+                            workers=workers, shuffle=shuffle,
+                            verbose=verbose,
+                            callbacks=callbacks)
+        histories.append(history)
+
+        val_metrics.append(history.history['val_' + metric_name][-1])
+        val_losses.append(history.history['val_loss'][-1])
+        if outputfile is not None:
+            store_train_hist_as_json(params, model_types,
+                                     history.history, outputfile)
+        if model_path is not None:
+                model.save(os.path.join(model_path, 'model_{}.h5'.format(i)))
+
+    return histories, val_metrics, val_losses
 
 def train_models_on_samples(X_train, y_train, X_val, y_val, models,
                             nr_epochs=5, subset_size=100, verbose=True, outputfile=None,
