@@ -133,7 +133,7 @@ def generate_models(
                 max_lstm_dims=deepconvlstm_max_lstm_dims,
                 low_lr=low_lr, high_lr=high_lr, low_reg=low_reg,
                 high_reg=high_reg,
-                deepconvlstm_lstm_activation=deepconvlstm_lstm_activation
+                activation=deepconvlstm_lstm_activation
             )
         models.append(
             (generate_model(x_shape, number_of_classes, metrics=metrics, **hyperparameters),
@@ -143,7 +143,7 @@ def generate_models(
 
 def generate_DeepConvLSTM_model(
         x_shape, class_number, filters, lstm_dims, learning_rate=0.01,
-        regularization_rate=0.01, metrics=['accuracy'], deepconvlstm_lstm_activation='tanh'):
+        regularization_rate=0.01, metrics=['accuracy'], lstm_activation='tanh'):
     """
     Generate a model with convolution and LSTM layers.
     See Ordonez et al., 2016, http://dx.doi.org/10.3390/s16010115
@@ -165,7 +165,7 @@ def generate_DeepConvLSTM_model(
     metrics : list
         Metrics to calculate on the validation set.
         See https://keras.io/metrics/ for possible values.
-    deepconvlstm_lstm_activation : str, optional
+    lstm_activation : str, optional
         LSTM activation function.
         See https://keras.io/activations/ for possible values.
 
@@ -199,7 +199,7 @@ def generate_DeepConvLSTM_model(
 
     for lstm_dim in lstm_dims:
         model.add(LSTM(units=lstm_dim, return_sequences=True,
-                       activation=deepconvlstm_lstm_activation))
+                       activation=lstm_activation))
 
     model.add(Dropout(0.5))  # dropout before the dense layer
     # set up final dense layer such that every timestamp is given one
@@ -336,7 +336,7 @@ def generate_DeepConvLSTM_hyperparameter_set(
         min_lstm_layers=1, max_lstm_layers=5,
         min_lstm_dims=10, max_lstm_dims=100,
         low_lr=1, high_lr=4, low_reg=1, high_reg=4,
-        deepconvlstm_lstm_activation='tanh'):
+        activation='tanh'):
     """ Generate a hyperparameter set that defines a DeepConvLSTM model.
 
     Parameters
@@ -369,7 +369,7 @@ def generate_DeepConvLSTM_hyperparameter_set(
     high_reg : float
         maximum  of log range for regularization rate: regularization rate is
         sampled between `10**(-low_reg)` and `10**(-high_reg)`
-    deepconvlstm_lstm_activation : str, optional
+    activation : str, optional
         LSTM activation function.
 
     Returns
@@ -387,7 +387,7 @@ def generate_DeepConvLSTM_hyperparameter_set(
         min_lstm_layers, max_lstm_layers + 1)
     hyperparameters['lstm_dims'] = np.random.randint(
         min_lstm_dims, max_lstm_dims + 1, number_of_lstm_layers).tolist()
-    hyperparameters['lstm_activation'] = deepconvlstm_lstm_activation
+    hyperparameters['lstm_activation'] = activation
     return hyperparameters
 
 
